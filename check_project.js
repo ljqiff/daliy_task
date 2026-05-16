@@ -112,7 +112,12 @@ async function checkProjects(headless) {
 
     // === Step 2: 点击申请 ===
     log("Step 2: 点击「申请」");
-    await page.getByText('申请').first().click();
+    // Dismiss any masks first
+    await page.evaluate(() => {
+      document.querySelectorAll('.uni-mask, [class*="mask"]').forEach(m => m.remove());
+    }).catch(() => {});
+    await sleep(500);
+    await page.getByText('申请').first().click({ force: true, timeout: 10000 });
     await sleep(2000);
 
     const pageText1 = await page.evaluate(() => document.body?.innerText?.substring(0, 200));
@@ -128,25 +133,43 @@ async function checkProjects(headless) {
 
     // === Step 3: 选择就业青年人才 ===
     log('Step 3: 选择「就业青年人才」');
-    await page.getByText('就业青年人才').click();
+    // Remove mask again before clicking
+    await page.evaluate(() => {
+      document.querySelectorAll('.uni-mask, [class*="mask"]').forEach(m => m.remove());
+    }).catch(() => {});
+    await sleep(300);
+    await page.getByText('就业青年人才').click({ force: true, timeout: 10000 });
     await sleep(500);
 
     // === Step 4: 点击确定 ===
     log('Step 4: 点击「确定」');
-    await page.getByText('确定').click();
+    await page.getByText('确定').first().click({ force: true, timeout: 10000 });
     await sleep(3000);
 
-    // === Step 5: 处理实名认证弹窗（如有） ===
-    const cancelBtn = page.locator('text=取消').last();
+    // === Step 5: 处理弹窗 ===
+    // 弹窗1: 实名认证提示 → 点取消
+    let cancelBtn = page.locator('text=取消').last();
     if (await cancelBtn.count() > 0) {
-      log('Step 5: 关闭实名认证提示弹窗');
+      log('Step 5a: 关闭实名认证弹窗');
       await cancelBtn.click({ force: true, timeout: 5000 });
+      await sleep(1000);
+    }
+    // 弹窗2: 开放时间提示(08:00-20:00以外) → 点确定
+    let timeModalBtn = page.locator('.uni-modal__btn').last();
+    if (await timeModalBtn.count() > 0) {
+      const timeText = await page.evaluate(() => {
+        const modal = document.querySelector('.uni-modal__bd');
+        return modal?.textContent?.trim() || '';
+      });
+      log(`Step 5b: 关闭时间提示弹窗: ${timeText}`);
+      await timeModalBtn.click({ force: true, timeout: 5000 });
       await sleep(1000);
     }
 
     // === Step 6: 等待阅读倒计时 ===
     log('Step 6: 等待阅读倒计时...');
     let countdownDone = false;
+    let closedHours = false;
     for (let i = 0; i < 30; i++) {
       await sleep(1000);
       const btnText = await page.evaluate(() => {
@@ -161,7 +184,26 @@ async function checkProjects(headless) {
         countdownDone = true;
         break;
       }
+      // If still showing talent selection page, closed hours
+      if (btnText === '确定' && i > 10) {
+        closedHours = true;
+        log('系统未开放（08:00-20:00），跳过本次检查', 'WARN');
+        break;
+      }
       if (i % 5 === 0) log(`  等待中... (${btnText || '加载中'})`);
+    }
+
+    if (closedHours) {
+      if (headless) {
+        fs.writeFileSync(CONFIG.cronOutputFile, JSON.stringify({
+          success: true, status: 'CLOSED_HOURS', available: false,
+          message: '系统开放时间 08:00-20:00', time: new Date().toISOString()
+        }, null, 2));
+      }
+      // Save updated session anyway
+      const newState = await context.storageState();
+      saveState(newState);
+      return { allFull: true, projects: [], note: '系统未开放' };
     }
 
     if (!countdownDone) {
