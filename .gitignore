@@ -1,8 +1,10 @@
 node_modules/
 .auth_state.json
+.auth_state_temp.json
 config.json
 screenshots/
 project_status.json
+project_status_prev.json
 notification.txt
 cron_output.json
 cron.log

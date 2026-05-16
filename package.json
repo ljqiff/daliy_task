@@ -20,6 +20,7 @@
   "homepage": "https://github.com/ljqiff/daliy_task#readme",
   "dependencies": {
     "playwright": "^1.60.0",
+    "sharp": "^0.34.5",
     "tesseract.js": "^7.0.0"
   }
 }
