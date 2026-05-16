@@ -1,0 +1,25 @@
+{
+  "name": "daliy_task",
+  "version": "1.0.0",
+  "description": "日常任务仓库。",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ljqiff/daliy_task.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ljqiff/daliy_task/issues"
+  },
+  "homepage": "https://github.com/ljqiff/daliy_task#readme",
+  "dependencies": {
+    "playwright": "^1.60.0",
+    "tesseract.js": "^7.0.0"
+  }
+}

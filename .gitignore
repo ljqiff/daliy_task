@@ -1,0 +1,11 @@
+node_modules/
+.auth_state.json
+config.json
+screenshots/
+project_status.json
+notification.txt
+cron_output.json
+cron.log
+test_screen*.png
+debug_*.png
+*.deb
